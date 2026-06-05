@@ -3,7 +3,7 @@ package redis
 import (
 	"time"
 
-	"github.com/everestp/simple-auth-microservice/cmd/auth/config"
+	"github.com/everestp/simple-auth-microservice/config"
 	"github.com/redis/go-redis/v9"
 )
 

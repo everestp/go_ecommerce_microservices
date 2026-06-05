@@ -2,12 +2,19 @@ package main
 
 import (
 	"log"
+	"net"
 	"os"
+	"time"
 
 	"github.com/everestp/simple-auth-microservice/config"
+	authServerGRPC "github.com/everestp/simple-auth-microservice/internal/auth/delivery/grpc/server"
 	"github.com/everestp/simple-auth-microservice/pkg/logger"
 	"github.com/everestp/simple-auth-microservice/pkg/utils"
+	userService "github.com/everestp/simple-auth-microservice/proto"
 	"github.com/joho/godotenv"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
 )
 
 func main(){
@@ -36,5 +43,29 @@ func main(){
 
 	appLogger.Infof("AppVersion: %s, LogLevel: %s, Mode: %s, SSL: %v", cfg.Server.AppVersion, cfg.Logger.Level, cfg.Server.Mode, cfg.Server.SSL)
 	appLogger.Infof("Success parsed config: %v", cfg.Server.AppVersion)
+
+	l, err := net.Listen("tcp", cfg.Server.Port)
+	if err != nil{
+		appLogger.Fatal(err)
+	}
+	
+
+	server := grpc.NewServer(grpc.KeepaliveParams(
+		keepalive.ServerParameters{
+			MaxConnectionIdle: 5 * time.Minute,
+			Timeout: 15 * time.Second,
+			MaxConnectionAge: 5 * time.Minute,
+			
+		},
+	))
+
+  if cfg.Server.Mode != "Prodiction"{
+	reflection.Register(server)
+  }
+	
+  authServerGRPC := authServerGRPC.NewAuthServerGRPC(appLogger ,cfg)
+  userService.RegisterUserServiceServer(server ,authServerGRPC)
+  appLogger.Info("Server is listening on port : %v",cfg.Server.Port)
+  appLogger.Fatal(server.Serve(l))
 
 }

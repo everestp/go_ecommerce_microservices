@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/everestp/simple-auth-microservice/cmd/auth/config"
+	"github.com/everestp/simple-auth-microservice/config"
 	"github.com/jmoiron/sqlx"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx driver
