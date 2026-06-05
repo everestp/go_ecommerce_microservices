@@ -9,9 +9,15 @@ import (
 	"github.com/everestp/simple-auth-microservice/config"
 	authServerGRPC "github.com/everestp/simple-auth-microservice/internal/auth/delivery/grpc/server"
 	"github.com/everestp/simple-auth-microservice/pkg/logger"
+	"github.com/everestp/simple-auth-microservice/pkg/postgres"
+	"github.com/everestp/simple-auth-microservice/pkg/redis"
 	"github.com/everestp/simple-auth-microservice/pkg/utils"
 	userService "github.com/everestp/simple-auth-microservice/proto"
+
 	"github.com/joho/godotenv"
+
+	
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -23,6 +29,7 @@ func main(){
     if err != nil {
         log.Println("No .env file found")
     }
+
 
 		configPath := utils.GetConfigPath(os.Getenv("config"))
 
@@ -44,6 +51,16 @@ func main(){
 	appLogger.Infof("AppVersion: %s, LogLevel: %s, Mode: %s, SSL: %v", cfg.Server.AppVersion, cfg.Logger.Level, cfg.Server.Mode, cfg.Server.SSL)
 	appLogger.Infof("Success parsed config: %v", cfg.Server.AppVersion)
 
+	psqlDb  , err := postgres.NewPsqlDB(cfg)
+	if err !=  nil{
+		appLogger.Fatalf("Postgress init %s",err)
+	} else {
+		appLogger.Info("Postgres connected , status :%v",psqlDb.Stats())
+	}
+  defer psqlDb.Close()
+  redisClient := redis.NewRedisClient(cfg)
+  defer redisClient.Close()
+  appLogger.Info("Redis Connected")
 	l, err := net.Listen("tcp", cfg.Server.Port)
 	if err != nil{
 		appLogger.Fatal(err)
